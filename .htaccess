@@ -1,0 +1,91 @@
+# ─── Sardab — Hardened .htaccess ──────────────────────────────
+
+ErrorDocument 400 /errors/error.php
+ErrorDocument 401 /errors/error.php
+ErrorDocument 403 /errors/error.php
+ErrorDocument 404 /errors/error.php
+ErrorDocument 405 /errors/error.php
+ErrorDocument 408 /errors/error.php
+ErrorDocument 429 /errors/error.php
+ErrorDocument 500 /errors/error.php
+ErrorDocument 502 /errors/error.php
+ErrorDocument 503 /errors/error.php
+ErrorDocument 504 /errors/error.php
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Block sensitive directories
+  RewriteRule ^app/storage/ - [F,L]
+  RewriteRule ^app/storage/meeting/ - [F,L]
+  RewriteRule /\. - [F,L]
+
+  <FilesMatch "\.(enc|meta|attempts|offer|answer)$">
+    Require all denied
+  </FilesMatch>
+
+  # API bypass — serve signal, vault, and meeting API directly
+  RewriteRule ^app/api/signal\.php$ - [L]
+  RewriteRule ^app/api/vault\.php$ - [L]
+  RewriteRule ^app/api/meeting-api\.php$ - [L]
+
+  # Real-file bypass — serve existing files/dirs directly
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Clean vault link: /v/XYZ → text-send feature
+  RewriteRule ^v/(.+)$ app/features/text-send/index.php?id=$1 [L,QSA]
+
+  # Clean room links for each P2P feature
+  RewriteRule ^r/(.+)$ app/features/messaging/index.php?room=$1 [L,QSA]
+  RewriteRule ^f/(.+)$ app/features/file-send/index.php?room=$1 [L,QSA]
+  RewriteRule ^call/(.+)$ app/features/voice-call/index.php?room=$1 [L,QSA]
+  RewriteRule ^vc/(.+)$ app/features/video-call/index.php?room=$1 [L,QSA]
+  RewriteRule ^m/(.+)$ app/features/meeting/index.php?room=$1 [L,QSA]
+
+  # Feature nice URLs
+  RewriteRule ^app/?$ app/index.php [L,QSA]
+  RewriteRule ^app/messaging/?$ app/features/messaging/index.php [L,QSA]
+  RewriteRule ^app/file-send/?$ app/features/file-send/index.php [L,QSA]
+  RewriteRule ^app/text-send/?$ app/features/text-send/index.php [L,QSA]
+  RewriteRule ^app/voice-call/?$ app/features/voice-call/index.php [L,QSA]
+  RewriteRule ^app/video-call/?$ app/features/video-call/index.php [L,QSA]
+  RewriteRule ^app/meeting/?$ app/features/meeting/index.php [L,QSA]
+
+  DirectoryIndex index.php
+</IfModule>
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always set X-Frame-Options "DENY"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(self), camera=(self), payment=(), usb=()"
+
+  Header always set Content-Security-Policy "\
+    default-src 'self'; \
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; \
+    font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; \
+    script-src 'self'; \
+    connect-src 'self'; \
+    img-src 'self' data:; \
+    form-action 'self'; \
+    base-uri 'self'; \
+    frame-ancestors 'none'; \
+    media-src 'self' blob:; \
+    upgrade-insecure-requests"
+
+  <FilesMatch "signal\.php$|vault\.php$">
+    Header always set Cache-Control "no-store, no-cache, must-revalidate, private"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_mime.c>
+  AddType application/javascript .js
+  AddType text/css .css
+  AddType image/svg+xml .svg
+</IfModule>
