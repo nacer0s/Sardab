@@ -105,7 +105,7 @@
 ## 🔗 الروابط
 
 - **الموقع الرسمي:** [https://sardab.gt.tc](https://sardab.gt.tc)
-- **طور بواسطة:** [Nacer](https://github.com/NacroDZ)
-- **تابعني على:** [كبيـلة](https://qabilah.com) • [مرتكز](https://mortakaz.com)
+- **طور بواسطة:** [Nacer Eddine](https://github.com/nacer0s)
+- **تابعني على:** [كبيـلة](https://qabilah.com/profile/nacer0s) • [مرتكز](https://www.mortakaz.com/@nacer0s) • [انستغرام](https://www.instagram.com/nacer0s) • [لينكدإن](https://www.linkedin.com/in/nacer0s)
 
 </div>
