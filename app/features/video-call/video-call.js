@@ -73,6 +73,16 @@
 
   function stopCallTimer() {
     callActive = false;
+    if (startTime > 0) {
+      var seconds = Math.floor((Date.now() - startTime) / 1000);
+      var month = new Date().toISOString().slice(0, 7);
+      var key = 'sardab_stats';
+      var stats = JSON.parse(localStorage.getItem(key) || '{}');
+      if (!stats[month]) stats[month] = { voice: 0, video: 0, meeting: 0 };
+      stats[month].video += seconds;
+      localStorage.setItem(key, JSON.stringify(stats));
+      startTime = 0;
+    }
     if (timerInt) { clearInterval(timerInt); timerInt = null; }
     if (cTimer) cTimer.textContent = '';
     if (cStat) cStat.textContent = '';

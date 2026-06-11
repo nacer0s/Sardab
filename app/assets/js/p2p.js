@@ -202,6 +202,11 @@
     self.isInitiator = true;
     if (self.onStatus) self.onStatus('Initializing…');
     self._initPC();
+
+    try {
+      await self.startAudio();
+    } catch(err) { console.log("No mic on create", err); }
+
     if (self.onInit) await self.onInit(self);
 
     self.channel = self.pc.createDataChannel('sardab');
@@ -272,6 +277,11 @@
     self.isInitiator = false;
     if (self.onStatus) self.onStatus('Preparing connection…');
     self._initPC();
+
+    try {
+      await self.startAudio();
+    } catch(err) { console.log("No mic on join", err); }
+
     if (self.onInit) await self.onInit(self);
     self._sendCandidates();
 

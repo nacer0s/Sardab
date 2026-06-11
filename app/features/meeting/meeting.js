@@ -7,6 +7,7 @@
   var startTime      = 0;
   var peerTiles      = {};  // peerId -> tile element
   var myName         = '';
+  var isAudioMuted   = false; // Global flag for audio state
 
   var $ = function (id) { return document.getElementById(id); };
 
@@ -58,7 +59,13 @@
     setPcount(0);
     showPlaceholder(true);
     if (locVid) locVid.srcObject = null;
-    if (btnMute) btnMute.classList.remove('is-muted', 'is-active');
+    if (btnMute) {
+      btnMute.classList.remove('is-muted');
+      btnMute.classList.add('is-active');
+      var icon = btnMute.querySelector('i');
+      if (icon) icon.className = 'fa-solid fa-microphone';
+    }
+    isAudioMuted = false;
     if (btnCam) btnCam.classList.remove('is-muted', 'is-active');
     if (btnScreen) btnScreen.classList.remove('is-active');
     Object.keys(peerTiles).forEach(function (pid) { removePeerTile(pid); });
@@ -110,6 +117,32 @@
       '</div>';
     chatMsg.appendChild(el);
     chatMsg.scrollTop = chatMsg.scrollHeight;
+  }
+
+  function _handleRemoteAudio(stream, peerId) {
+    // Check if this stream belongs to our own microphone to prevent double feedback loop
+    if (currentMeeting && currentMeeting.localStream && currentMeeting.localStream.id === stream.id) {
+      console.log("[P2P] Skipping local stream duplicate playback.");
+      return;
+    }
+
+    var existingAudio = document.getElementById('audio-' + peerId);
+    if (existingAudio) {
+      existingAudio.srcObject = stream;
+      return;
+    }
+
+    var audio = document.createElement('audio');
+    audio.id = 'audio-' + peerId;
+    audio.srcObject = stream;
+    audio.autoplay = true;
+    
+    // Safety check if we are currently muted globally
+    if (isAudioMuted) {
+      audio.muted = true;
+    }
+    
+    document.body.appendChild(audio);
   }
 
   function esc(str) {
@@ -192,6 +225,9 @@
       tile.remove();
       delete peerTiles[peerId];
     }
+    var audioEl = document.getElementById('audio-' + peerId);
+    if (audioEl) { audioEl.srcObject = null; audioEl.remove(); }
+    
     var tileCount = vidGrid.querySelectorAll('.video-tile:not(.video-tile-local)').length;
     if (tileCount === 0) showPlaceholder(true);
   }
@@ -210,6 +246,11 @@
     video.autoplay = true;
     video.playsinline = true;
     video.srcObject = stream;
+    
+    if (isAudioMuted) {
+      video.muted = true;
+    }
+
     tile.insertBefore(video, tile.firstChild);
   }
 
@@ -237,6 +278,16 @@
 
   function stopMeetingTimer() {
     callActive = false;
+    if (startTime > 0) {
+      var seconds = Math.floor((Date.now() - startTime) / 1000);
+      var month = new Date().toISOString().slice(0, 7);
+      var key = 'sardab_stats';
+      var stats = JSON.parse(localStorage.getItem(key) || '{}');
+      if (!stats[month]) stats[month] = { voice: 0, video: 0, meeting: 0 };
+      stats[month].meeting += seconds;
+      localStorage.setItem(key, JSON.stringify(stats));
+      startTime = 0;
+    }
     if (timerInt) { clearInterval(timerInt); timerInt = null; }
   }
 
@@ -257,6 +308,7 @@
 
   function cleanup() {
     if (currentMeeting) { currentMeeting.disconnect(); currentMeeting = null; }
+    document.querySelectorAll('audio').forEach(function(el) { if(el.id.startsWith('audio-')) el.remove(); });
   }
 
   /* ─── Init ────────────────────────────────────── */
@@ -294,6 +346,7 @@
     };
 
     meeting.onAudioStream = function (stream, peerId) {
+      _handleRemoteAudio(stream, peerId);
       setPeerVideo(peerId, stream);
     };
 
@@ -321,6 +374,7 @@
     (async function () {
       try {
         await meeting.init(myName);
+        
         setStatus('Connected', true);
         startMeetingTimer();
         showRoomLink(roomId);
@@ -328,7 +382,6 @@
         showPlaceholder(meeting.participants.length === 0);
       } catch (e) {
         setStatus('Failed: ' + e.message, false);
-        if (window.showToast) showToast(e.message, 'error');
       }
     })();
   }
@@ -361,10 +414,47 @@
 
   if (btnMute) {
     btnMute.addEventListener('click', function () {
-      if (!currentMeeting) return;
-      var muted = currentMeeting.toggleMute();
-      if (muted === true) { btnMute.classList.remove('is-muted'); btnMute.classList.add('is-active'); }
-      else if (muted === false) { btnMute.classList.add('is-muted'); btnMute.classList.remove('is-active'); }
+      var icon = btnMute.querySelector('i');
+      
+      // Toggle state clean
+      isAudioMuted = !isAudioMuted;
+
+      // 1. Force state on the WebRTC engine tracks globally
+      if (currentMeeting) {
+        if (currentMeeting._audioTrack) {
+          currentMeeting._audioTrack.enabled = !isAudioMuted;
+        }
+        if (currentMeeting.localStream) {
+          currentMeeting.localStream.getAudioTracks().forEach(function(t) { t.enabled = !isAudioMuted; });
+        }
+      }
+
+      // 2. Synchronize UI Colors & Classes perfectly
+      if (isAudioMuted) {
+        btnMute.classList.remove('is-active');
+        btnMute.classList.add('is-muted');
+        if (icon) icon.className = 'fa-solid fa-microphone-slash';
+        
+        // Mute every dynamic element playing in this tab to cut feedback echo loops
+        document.querySelectorAll('audio, video').forEach(function(el) {
+          el.muted = true;
+        });
+
+        if (window.showToast) showToast('Microphone Muted', 'info');
+      } else {
+        btnMute.classList.remove('is-muted');
+        btnMute.classList.add('is-active');
+        if (icon) icon.className = 'fa-solid fa-microphone';
+        
+        // Unmute remote assets only
+        document.querySelectorAll('audio, video').forEach(function(el) {
+          if (!el.classList.contains('local-video')) {
+            el.muted = false;
+          }
+        });
+
+        if (window.showToast) showToast('Microphone Active', 'success');
+      }
     });
   }
 

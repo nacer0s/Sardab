@@ -1,0 +1,17 @@
+{"candidate":"candidate:1015791339 1 udp 2122260223 192.168.223.1 54581 typ host generation 0 ufrag NqCs network-id 1","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"NqCs"}
+{"candidate":"candidate:4278012060 1 udp 2122194687 192.168.41.1 54582 typ host generation 0 ufrag NqCs network-id 2","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"NqCs"}
+{"candidate":"candidate:351952037 1 udp 2122129151 192.168.31.148 54583 typ host generation 0 ufrag NqCs network-id 3 network-cost 10","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"NqCs"}
+{"candidate":"candidate:1015791339 1 udp 2122260223 192.168.223.1 54584 typ host generation 0 ufrag NqCs network-id 1","sdpMid":"1","sdpMLineIndex":1,"usernameFragment":"NqCs"}
+{"candidate":"candidate:4278012060 1 udp 2122194687 192.168.41.1 54585 typ host generation 0 ufrag NqCs network-id 2","sdpMid":"1","sdpMLineIndex":1,"usernameFragment":"NqCs"}
+{"candidate":"candidate:351952037 1 udp 2122129151 192.168.31.148 54586 typ host generation 0 ufrag NqCs network-id 3 network-cost 10","sdpMid":"1","sdpMLineIndex":1,"usernameFragment":"NqCs"}
+{"candidate":"candidate:2184329852 1 udp 1685921535 41.141.121.6 54583 typ srflx raddr 192.168.31.148 rport 54583 generation 0 ufrag NqCs network-id 3 network-cost 10","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"NqCs"}
+{"candidate":"candidate:2184329852 1 udp 1685921535 41.141.121.6 54586 typ srflx raddr 192.168.31.148 rport 54586 generation 0 ufrag NqCs network-id 3 network-cost 10","sdpMid":"1","sdpMLineIndex":1,"usernameFragment":"NqCs"}
+{"candidate":"candidate:3256969855 1 tcp 1518280447 192.168.223.1 9 typ host tcptype active generation 0 ufrag NqCs network-id 1","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"NqCs"}
+{"candidate":"candidate:5741576 1 tcp 1518214911 192.168.41.1 9 typ host tcptype active generation 0 ufrag NqCs network-id 2","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"NqCs"}
+{"candidate":"candidate:3931146289 1 tcp 1518149375 192.168.31.148 9 typ host tcptype active generation 0 ufrag NqCs network-id 3 network-cost 10","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"NqCs"}
+{"candidate":"candidate:3256969855 1 tcp 1518280447 192.168.223.1 9 typ host tcptype active generation 0 ufrag NqCs network-id 1","sdpMid":"1","sdpMLineIndex":1,"usernameFragment":"NqCs"}
+{"candidate":"candidate:5741576 1 tcp 1518214911 192.168.41.1 9 typ host tcptype active generation 0 ufrag NqCs network-id 2","sdpMid":"1","sdpMLineIndex":1,"usernameFragment":"NqCs"}
+{"candidate":"candidate:3931146289 1 tcp 1518149375 192.168.31.148 9 typ host tcptype active generation 0 ufrag NqCs network-id 3 network-cost 10","sdpMid":"1","sdpMLineIndex":1,"usernameFragment":"NqCs"}
+{"candidate":"candidate:4068268878 1 udp 2122260223 192.168.223.1 57881 typ host generation 0 ufrag n1oZ network-id 1","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"n1oZ"}
+{"candidate":"candidate:1400179698 1 udp 2122194687 192.168.41.1 57882 typ host generation 0 ufrag n1oZ network-id 2","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"n1oZ"}
+{"candidate":"candidate:2166754166 1 udp 2122129151 192.168.31.148 57883 typ host generation 0 ufrag n1oZ network-id 3 network-cost 10","sdpMid":"0","sdpMLineIndex":0,"usernameFragment":"n1oZ"}
