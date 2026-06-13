@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/app/assets/css/components.css" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
 </head>
 <body>
 
@@ -22,6 +23,7 @@
       <a href="/" class="nav-link">Home</a>
     </div>
     <a href="/" class="btn btn-ghost btn-sm"><i class="fa-solid fa-chevron-left btn-icon"></i> Home</a>
+    <a href="/app/dashboard.php" class="btn btn-ghost btn-sm"><i class="fa-solid fa-chevron-left btn-icon"></i> Dashboard</a>
   </nav>
 
   <main class="page">
