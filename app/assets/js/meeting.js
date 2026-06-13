@@ -53,6 +53,7 @@
     this.conns        = {};    // peerId -> { connected, ... }
     this.localStream  = null;
     this.screenStream = null;
+    this._screenSenders = {};
     this._audioTrack  = null;
     this._videoTrack  = null;
     this._pollTimer   = null;
@@ -221,6 +222,16 @@
             try { room.pc.addTrack(t, self.localStream); } catch (e) {}
           });
         }
+        /* Add screen share track to newly connected room, if active */
+        if (self.screenStream && room.pc) {
+          self._screenSenders[peerId] = self._screenSenders[peerId] || [];
+          self.screenStream.getTracks().forEach(function (t) {
+            try {
+              var sender = room.pc.addTrack(t, self.screenStream);
+              self._screenSenders[peerId].push(sender);
+            } catch (e) {}
+          });
+        }
       }
     };
 
@@ -253,6 +264,7 @@
       delete this.rooms[peerId];
     }
     delete this.conns[peerId];
+    delete this._screenSenders[peerId];
   };
 
   /* ─── Messaging ───────────────────────────────── */
@@ -351,12 +363,15 @@
     return null;
   };
 
+  /* ─── Screen share ────────────────────────────── */
+
   Meeting.prototype.startScreenShare = async function () {
     var self = this;
     if (self.screenStream) return self.screenStream;
     try {
       var stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
       self.screenStream = stream;
+      self._screenSenders = self._screenSenders || {};
 
       stream.getVideoTracks()[0].onended = function () {
         self.stopScreenShare();
@@ -365,8 +380,12 @@
       Object.keys(self.rooms).forEach(function (peerId) {
         var r = self.rooms[peerId];
         if (r && r.pc && r.connected) {
+          self._screenSenders[peerId] = self._screenSenders[peerId] || [];
           stream.getTracks().forEach(function (t) {
-            try { r.pc.addTrack(t, stream); } catch (e) {}
+            try {
+              var sender = r.pc.addTrack(t, stream);
+              self._screenSenders[peerId].push(sender);
+            } catch (e) {}
           });
         }
       });
@@ -379,11 +398,23 @@
   };
 
   Meeting.prototype.stopScreenShare = function () {
-    if (this.screenStream) {
-      this.screenStream.getTracks().forEach(function (t) { t.stop(); });
-      this.screenStream = null;
+    var self = this;
+    if (self.screenStream) {
+      self.screenStream.getTracks().forEach(function (t) { t.stop(); });
+      self.screenStream = null;
     }
-    if (this.onScreenStream) this.onScreenStream(null);
+    if (self._screenSenders) {
+      Object.keys(self._screenSenders).forEach(function (peerId) {
+        var r = self.rooms[peerId];
+        (self._screenSenders[peerId] || []).forEach(function (sender) {
+          if (r && r.pc) {
+            try { r.pc.removeTrack(sender); } catch (e) {}
+          }
+        });
+      });
+      self._screenSenders = {};
+    }
+    if (self.onScreenStream) self.onScreenStream(null);
   };
 
   /* ─── Disconnect ──────────────────────────────── */

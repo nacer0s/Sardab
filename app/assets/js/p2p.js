@@ -167,6 +167,58 @@
     self.pc.onicecandidateerror = function (e) {
       console.log('[P2P] STUN error for ' + e.url + ': ' + (e.errorText || e.errorCode || 'unknown'));
     };
+
+    /* ─── Renegotiation (needed for screen share / late track adds) ── */
+    self._negotiating = false;
+    self.pc.onnegotiationneeded = function () {
+      if (self._destroyed || !self.connected || !self.channel || self.channel.readyState !== 'open') return;
+      if (self._negotiating) return;
+      self._negotiating = true;
+
+      (async function () {
+        try {
+          var offer = await self.pc.createOffer();
+          await self.pc.setLocalDescription(offer);
+          self.channel.send(JSON.stringify({
+            t: 'renegotiate-offer',
+            sdp: { type: self.pc.localDescription.type, sdp: self.pc.localDescription.sdp }
+          }));
+        } catch (e) {
+          console.log('[P2P] renegotiation offer failed: ' + e.message);
+          self._negotiating = false;
+        }
+      })();
+    };
+  };
+
+  /* ─── Handle incoming renegotiation messages ─────────── */
+
+  Room.prototype._handleRenegotiateOffer = async function (sdp) {
+    var self = this;
+    if (self._destroyed || !self.pc) return;
+    try {
+      await self.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+      var answer = await self.pc.createAnswer();
+      await self.pc.setLocalDescription(answer);
+      self.channel.send(JSON.stringify({
+        t: 'renegotiate-answer',
+        sdp: { type: self.pc.localDescription.type, sdp: self.pc.localDescription.sdp }
+      }));
+    } catch (e) {
+      console.log('[P2P] renegotiation answer failed: ' + e.message);
+    }
+  };
+
+  Room.prototype._handleRenegotiateAnswer = async function (sdp) {
+    var self = this;
+    if (self._destroyed || !self.pc) return;
+    try {
+      await self.pc.setRemoteDescription(new RTCSessionDescription(sdp));
+    } catch (e) {
+      console.log('[P2P] applying renegotiation answer failed: ' + e.message);
+    } finally {
+      self._negotiating = false;
+    }
   };
 
   /* ─── ICE gathering with timeout ─────────────── */
@@ -494,6 +546,16 @@
 
       if (msg.t === 'msg') {
         if (self.onMessage) self.onMessage(msg.d);
+        return;
+      }
+
+      if (msg.t === 'renegotiate-offer') {
+        self._handleRenegotiateOffer(msg.sdp);
+        return;
+      }
+
+      if (msg.t === 'renegotiate-answer') {
+        self._handleRenegotiateAnswer(msg.sdp);
         return;
       }
 
