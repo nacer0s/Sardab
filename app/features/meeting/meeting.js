@@ -261,77 +261,83 @@
 
   /* ─── Init ────────────────────────────────────── */
 
-  function initMeeting(roomId) {
-    cleanup();
-    resetUI();
-    showNamePrompt();
-    setStatus('Initializing…', false);
-    showPlaceholder(true);
+ function initMeeting(roomId) {
+  cleanup();
+  resetUI();
+  showNamePrompt();
+  setStatus('Initializing…', false);
+  showPlaceholder(true);
 
-    if (locLabel) locLabel.textContent = myName || 'You';
+  if (locLabel) locLabel.textContent = myName || 'You';
 
-    var meeting = new Meeting.Meeting(roomId);
-    currentMeeting = meeting;
+  var meeting = new Meeting.Meeting(roomId);
+  currentMeeting = meeting;
 
-    meeting.onParticipantJoin = function (peerId, peerName) {
-      addPeerTile(peerId, peerName || peerId.substring(0, 8));
-      addSystemMsg((peerName || peerId.substring(0, 8)) + ' joined');
+  // ✅ CORRIGÉ — recordActivity ajouté ici, pas de doublon
+  meeting.onParticipantJoin = function (peerId, peerName) {
+    addPeerTile(peerId, peerName || peerId.substring(0, 8));
+    addSystemMsg((peerName || peerId.substring(0, 8)) + ' joined');
+    setPcount(meeting.participants.length);
+
+    if (meeting.participants.length === 1) {
+      recordActivity('sardab_activity');
+      recordSessionMinutes('meeting');
+    }
+  };
+
+  meeting.onParticipantLeave = function (peerId, peerName) {
+    removePeerTile(peerId);
+    addSystemMsg((peerName || peerId.substring(0, 8)) + ' left');
+    setPcount(meeting.participants.length);
+  };
+
+  meeting.onMessage = function (text, fromPeerId) {
+    addChatMsg(meeting.getPeerName(fromPeerId), text);
+  };
+
+  meeting.onFileReceived = function (blob, name, fromPeerId) {
+    addFileMsg(meeting.getPeerName(fromPeerId), blob, name);
+  };
+
+  meeting.onAudioStream = function (stream, peerId) {
+    setPeerVideo(peerId, stream);
+  };
+
+  meeting.onVideoStream = function (stream, peerId) {
+    setPeerVideo(peerId, stream);
+  };
+
+  meeting.onScreenStream = function (stream) {
+    if (stream && locVid) {
+      locVid.srcObject = stream;
+    } else if (!stream && locVid && currentMeeting && currentMeeting.localStream) {
+      locVid.srcObject = currentMeeting.localStream;
+    }
+  };
+
+  meeting.onNameChange = function (peerId, newName, oldName) {
+    updatePeerLabel(peerId, newName);
+    addSystemMsg((oldName || peerId.substring(0, 8)) + ' is now ' + newName);
+  };
+
+  meeting.onError = function (msg) {
+    if (window.showToast) showToast(msg, 'error');
+  };
+
+  (async function () {
+    try {
+      await meeting.init(myName);
+      setStatus('Connected', true);
+      startMeetingTimer();
+      showRoomLink(roomId);
       setPcount(meeting.participants.length);
-    };
-
-    meeting.onParticipantLeave = function (peerId, peerName) {
-      removePeerTile(peerId);
-      addSystemMsg((peerName || peerId.substring(0, 8)) + ' left');
-      setPcount(meeting.participants.length);
-    };
-
-    meeting.onMessage = function (text, fromPeerId) {
-      addChatMsg(meeting.getPeerName(fromPeerId), text);
-    };
-
-    meeting.onFileReceived = function (blob, name, fromPeerId) {
-      addFileMsg(meeting.getPeerName(fromPeerId), blob, name);
-    };
-
-    meeting.onAudioStream = function (stream, peerId) {
-      setPeerVideo(peerId, stream);
-    };
-
-    meeting.onVideoStream = function (stream, peerId) {
-      setPeerVideo(peerId, stream);
-    };
-
-    meeting.onScreenStream = function (stream) {
-      if (stream && locVid) {
-        locVid.srcObject = stream;
-      } else if (!stream && locVid && currentMeeting && currentMeeting.localStream) {
-        locVid.srcObject = currentMeeting.localStream;
-      }
-    };
-
-    meeting.onNameChange = function (peerId, newName, oldName) {
-      updatePeerLabel(peerId, newName);
-      addSystemMsg((oldName || peerId.substring(0, 8)) + ' is now ' + newName);
-    };
-
-    meeting.onError = function (msg) {
-      if (window.showToast) showToast(msg, 'error');
-    };
-
-    (async function () {
-      try {
-        await meeting.init(myName);
-        setStatus('Connected', true);
-        startMeetingTimer();
-        showRoomLink(roomId);
-        setPcount(meeting.participants.length);
-        showPlaceholder(meeting.participants.length === 0);
-      } catch (e) {
-        setStatus('Failed: ' + e.message, false);
-        if (window.showToast) showToast(e.message, 'error');
-      }
-    })();
-  }
+      showPlaceholder(meeting.participants.length === 0);
+    } catch (e) {
+      setStatus('Failed: ' + e.message, false);
+      if (window.showToast) showToast(e.message, 'error');
+    }
+  })();
+}
 
   /* ─── Auto-join ───────────────────────────────── */
 

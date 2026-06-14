@@ -284,6 +284,18 @@
     if (recvBtn) recvBtn.click();
     if (btnJn) setTimeout(function () { btnJn.click(); }, 300);
   }
+  room.onStatus = function (s) {
+  if (room !== currentRoom) return;
+  if (s === 'connected') {
+    setConn(connW, connL, 'connected', 'Connected');
+    startCallTimer();
+    // ✅ AJOUT
+    recordActivity('sardab_activity');
+    recordSessionMinutes('voice');   // pour les stats
+    return;
+  }
+  // ...
+};
 
   window.addEventListener('beforeunload', function () { cleanup(); });
 
