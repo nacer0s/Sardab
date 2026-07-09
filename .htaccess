@@ -1,0 +1,59 @@
+RewriteEngine On
+
+# Security Headers
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(self), microphone=(self), display-capture=(self), clipboard-read=(self), clipboard-write=(self)"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+</IfModule>
+
+# Redirect favicon.ico to favicon.svg
+RewriteRule ^favicon\.ico$ favicon.svg [R=301,L]
+
+# Route feature requests to the feature's PHP router
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^app/(chat|voice|video|meet)(/.*)?$ app/$1/index.php [QSA,L]
+
+# Block data directories
+RewriteRule ^app/(chat|voice|video|meet)/data/ - [F,L]
+
+# Fallback: route all 404s to index.php for static file serving
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Block .json files (except manifest.json)
+<FilesMatch "\.json$">
+  Require all denied
+</FilesMatch>
+<Files "manifest.json">
+  Require all granted
+</Files>
+
+# Block .md files
+<FilesMatch "\.md$">
+  Require all denied
+</FilesMatch>
+
+# Cache static assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType application/json "access plus 0 seconds"
+</IfModule>
+
+# Gzip compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes

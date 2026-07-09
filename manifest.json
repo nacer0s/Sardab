@@ -1,0 +1,15 @@
+{
+  "name": "Sardab - Encrypted P2P Communication",
+  "short_name": "Sardab",
+  "description": "Zero-knowledge encrypted peer-to-peer communication platform. Chat, voice, video, and meetings.",
+  "start_url": "/app/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#0a0a0f",
+  "orientation": "any",
+  "categories": ["communication", "social", "security"],
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
